@@ -179,7 +179,7 @@ export class MuteService {
             const hasMute = this.activeMuteTimers.filter((mute) => {
                 return mute.memberId === member.id && mute.guildId === member.guild.id
             });
-            if (hasMute) {
+            if (hasMute.length > 0) {
                 this.logService.logToGuildChannel(`${memberText} has rejoined with a current mute, re-muting`, member.guild);
                 await member.roles.add(mutedRole.value);
             }
