@@ -1,0 +1,35 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@3.0.0
+  codecov: codecov/codecov@1.0.2
+  heroku: circleci/heroku@0.0.10
+
+workflows:
+  heroku_deploy:
+    jobs:
+      - build
+      - heroku/deploy-via-git:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
+
+jobs:
+  build:
+    docker:
+      - image: circleci/node:12.18.2
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: yarn install
+      - run:
+          name: Run Tests
+          command: ./node_modules/.bin/jest --maxWorkers=2
+      - codecov/upload:
+          file: "./coverage/clover.xml"
+      - run:
+          name: Compile TSC
+          command: ./node_modules/.bin/tsc
