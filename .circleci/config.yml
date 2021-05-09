@@ -26,10 +26,5 @@ jobs:
           name: Install dependencies
           command: yarn install
       - run:
-          name: Run Tests
-          command: ./node_modules/.bin/jest --maxWorkers=2
-      - codecov/upload:
-          file: "./coverage/clover.xml"
-      - run:
           name: Compile TSC
           command: ./node_modules/.bin/tsc

@@ -83,6 +83,11 @@ sequelize.sync();
 
 client.login(process.env.BOT_TOKEN);
 
+client.on('ready', () => {
+    BanService.getInstance().loadBans();
+    MuteService.getInstance().loadMutes();
+});
+
 client.on('guildMemberAdd', (member: GuildMember) => MuteService.getInstance().handleUserRejoin(member));
 client.on('guildBanRemove', (guild: Guild, user: User) => BanService.getInstance().unbanUser(user.id, guild.id));
 
