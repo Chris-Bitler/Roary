@@ -10,6 +10,7 @@
     "emitDecoratorMetadata": true,
     "moduleResolution": "node",
     "module": "commonjs",
+    "skipLibCheck": true,
     "lib": ["es2020.string"]
   },
   "include": [
