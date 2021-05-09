@@ -44,7 +44,7 @@ export class KickService {
     public async kickUser(kickee: GuildMember, kicker: GuildMember, reason: string): Promise<string> {
         const memberText = this.logService.getMemberText(kickee);
 
-        this.logService.logToGuildChannel(`Kicking user ${memberText}.`, kickee.guild);
+        this.logService.logToGuildChannel(`Kicking user ${memberText} for _${reason}_ by ${kicker.nickname || kicker.user.username}`, kickee.guild);
 
         try {
             await kickee.send(

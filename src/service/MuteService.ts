@@ -89,7 +89,7 @@ export class MuteService {
             return message;
         }
 
-        this.logService.logToGuildChannel(`Muting user ${memberText}.`, mutee.guild);
+        this.logService.logToGuildChannel(`Muting user ${memberText} for _${reason}_ for time ${expiration} by ${muter.nickname || muter.user.username}`, mutee.guild);
         const currentlyMuted = this.activeMuteTimers.find((mute) => mute.memberId === mutee.id);
 
         const chrono = getChronoCustom();

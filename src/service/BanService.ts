@@ -78,7 +78,7 @@ export class BanService {
     public async banUser(banee: GuildMember, banner: GuildMember, reason: string, expiration: string): Promise<string> {
         const memberText = this.logService.getMemberText(banee);
 
-        this.logService.logToGuildChannel(`Banning user ${memberText}.`, banee.guild);
+        this.logService.logToGuildChannel(`Banning user ${memberText} for _${reason}_ for time ${expiration} by ${banner.nickname || banner.user.username}`, banee.guild);
 
         const chrono = getChronoCustom();
         const parsedDate = chrono.parseDate(expiration);

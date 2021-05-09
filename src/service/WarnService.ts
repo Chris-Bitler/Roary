@@ -43,7 +43,7 @@ export class WarnService {
     public async warnUser(warnee: GuildMember, warner: GuildMember, reason: string): Promise<string> {
         const memberText = this.logService.getMemberText(warnee);
 
-        this.logService.logToGuildChannel(`Warning user ${memberText}.`, warnee.guild);
+        this.logService.logToGuildChannel(`Warning user ${memberText} for ${reason} by ${warner.nickname || warner.user.username}`, warnee.guild);
 
         try {
             await warnee.send(
