@@ -16,7 +16,7 @@ export class BanCommand extends ExtendedSlashCommand {
      */
     constructor(client: Client, creator: SlashCreator) {
         super(creator, {
-            name: 'ban',
+            name: 'rban',
             description: 'Ban moderation command',
             requiredPermissions: ['KICK_MEMBERS'],
             options: [{

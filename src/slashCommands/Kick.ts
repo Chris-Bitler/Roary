@@ -16,7 +16,7 @@ export class KickCommand extends ExtendedSlashCommand {
      */
     constructor(client: Client, creator: SlashCreator) {
         super(creator, {
-            name: 'kick',
+            name: 'rkick',
             description: 'Kick moderation command',
             requiredPermissions: ['KICK_MEMBERS'],
             options: [{

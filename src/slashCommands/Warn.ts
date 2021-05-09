@@ -18,7 +18,7 @@ export class WarnCommand extends ExtendedSlashCommand {
      */
     constructor(client: Client, creator: SlashCreator) {
         super(creator, {
-            name: 'warn',
+            name: 'rwarn',
             description: 'Warn moderation command',
             requiredPermissions: ['KICK_MEMBERS'],
             options: [{

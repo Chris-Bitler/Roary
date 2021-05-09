@@ -17,7 +17,7 @@ export class MuteCommand extends ExtendedSlashCommand {
      */
     constructor(client: Client, creator: SlashCreator) {
         super(creator, {
-            name: 'mute',
+            name: 'rmute',
             description: 'Mute moderation command',
             requiredPermissions: ['KICK_MEMBERS'],
             options: [{

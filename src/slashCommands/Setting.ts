@@ -16,7 +16,7 @@ export class SettingCommand extends ExtendedSlashCommand {
      */
     constructor(client: Client, creator: SlashCreator) {
         super(creator, {
-            name: 'setting',
+            name: 'rsetting',
             description: 'Setting Command',
             requiredPermissions: ['ADMINISTRATOR'],
             options: [{
