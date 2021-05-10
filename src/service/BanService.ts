@@ -1,13 +1,12 @@
 import {LoggingService} from "./LoggingService";
 import {GuildMember} from "discord.js";
-import {BanTimer, MuteTimer} from "../types/Punishment";
-import {Mute} from "../models/Mute";
-import {Setting} from "../models/Setting";
+import {ActivePunishment} from "../types/Punishment";
 import {client} from "../Bot";
 import {getChronoCustom} from "../util/DateUtil";
 import {Ban} from "../models/Ban";
 import {getInformationalEmbed} from "../util/EmbedUtil";
 import moment from "moment-timezone";
+import {QueueService} from "./QueueService";
 
 /**
  * Service for managing user bans
@@ -15,7 +14,7 @@ import moment from "moment-timezone";
 export class BanService {
     static instance: BanService;
     logService: LoggingService;
-    activeBanTimers: BanTimer[] = [];
+    activeBans: ActivePunishment[] = [];
 
     /**
      * Create a new instance of BanService
@@ -54,12 +53,7 @@ export class BanService {
                     serverId: guildId
                 }
             });
-
-            const banTimer = this.activeBanTimers.find((ban) => ban.memberId === memberId);
-            if (banTimer) {
-                clearTimeout(banTimer.timerId);
-            }
-            this.activeBanTimers = this.activeBanTimers.filter((ban) => ban.memberId === memberId);
+            this.activeBans = this.activeBans.filter((ban) => ban.memberId === memberId);
             const message = `Unbanned user ${memberId}`;
             this.logService.logToGuildChannel(message, guildId);
             return message;
@@ -98,8 +92,6 @@ export class BanService {
             }
         });
 
-        const timeout = parsedDate.getTime() - Date.now();
-
         const expirationDateString = moment
             .tz(parsedDate.getTime(), 'America/New_York')
             .format('MMMM Do YYYY, h:mm:ss a');
@@ -126,12 +118,11 @@ export class BanService {
             await banee.ban({
                 reason
             });
-            const timeoutId = setTimeout(() => this.unbanUser(banee.id, banee.guild.id), timeout);
-            this.activeBanTimers.push({
-                timerId: timeoutId,
+            this.activeBans.push({
                 memberId: banee.id,
                 clearTime: parsedDate.getTime(),
                 guildId: banee.guild.id,
+                type: 'ban',
             });
             const message = `User ${memberText} banned until ${expirationDateString}`;
             this.logService.logToGuildChannel(message, banee.guild);
@@ -159,13 +150,9 @@ export class BanService {
         bans.forEach((ban) => {
             const now = Date.now();
             if (ban.clearTime > now && ban.active) {
-                const unbanTimer = setTimeout(
-                    () => this.unbanUser(ban.userId, ban.serverId),
-                    ban.clearTime - now
-                );
-                this.activeBanTimers.push({
+                this.activeBans.push({
                     memberId: ban.userId,
-                    timerId: unbanTimer,
+                    type: 'ban',
                     clearTime: ban.clearTime,
                     guildId: ban.serverId
                 });
@@ -190,5 +177,21 @@ export class BanService {
                 }
             }
         });
+    }
+
+    /**
+     * Tick the bans, adding one to the undo queue if done
+     */
+    public async tickBans() {
+        const now = Date.now();
+        const expiredBans = this.activeBans.filter((ban) => now > ban.clearTime);
+        const nonExpiredBans = this.activeBans.filter((ban) => now < ban.clearTime);
+        expiredBans.forEach((ban) => {
+            if (now > ban.clearTime) {
+                QueueService.getInstance().addToPunishmentUndoQueue(ban);
+            }
+        });
+
+        this.activeBans = nonExpiredBans;
     }
 }

@@ -28,6 +28,7 @@ import {UnmuteCommand} from "./slashCommands/Unmute";
 import {WarnCommand} from "./slashCommands/Warn";
 import {MuteService} from "./service/MuteService";
 import {BanService} from "./service/BanService";
+import {QueueService} from "./service/QueueService";
 
 pg.defaults.parseInt8 = true;
 
@@ -86,6 +87,9 @@ client.login(process.env.BOT_TOKEN);
 client.on('ready', () => {
     BanService.getInstance().loadBans();
     MuteService.getInstance().loadMutes();
+    setInterval(() => MuteService.getInstance().tickMutes(), 1000);
+    setInterval(() => BanService.getInstance().tickBans(), 1000);
+    setInterval(() => QueueService.getInstance().tickPunishmentUndoQueue(), 3000);
 });
 
 client.on('guildMemberAdd', (member: GuildMember) => MuteService.getInstance().handleUserRejoin(member));

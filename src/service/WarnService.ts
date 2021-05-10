@@ -1,11 +1,5 @@
 import {LoggingService} from "./LoggingService";
 import {GuildMember} from "discord.js";
-import {BanTimer, MuteTimer} from "../types/Punishment";
-import {Mute} from "../models/Mute";
-import {Setting} from "../models/Setting";
-import {client} from "../Bot";
-import {getChronoCustom} from "../util/DateUtil";
-import {Ban} from "../models/Ban";
 import {Warn} from "../models/Warn";
 import {getInformationalEmbed} from "../util/EmbedUtil";
 

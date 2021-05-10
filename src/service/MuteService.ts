@@ -1,12 +1,13 @@
 import {LoggingService} from "./LoggingService";
 import {GuildMember} from "discord.js";
-import {MuteTimer} from "../types/Punishment";
+import {ActivePunishment} from "../types/Punishment";
 import {Mute} from "../models/Mute";
 import {Setting} from "../models/Setting";
 import {client} from "../Bot";
 import {getChronoCustom} from "../util/DateUtil";
 import moment from "moment-timezone";
 import {getInformationalEmbed} from "../util/EmbedUtil";
+import {QueueService} from "./QueueService";
 
 /**
  * Service for managing user mutes
@@ -14,7 +15,7 @@ import {getInformationalEmbed} from "../util/EmbedUtil";
 export class MuteService {
     static instance: MuteService;
     logService: LoggingService;
-    activeMuteTimers: MuteTimer[] = [];
+    activeMutes: ActivePunishment[] = [];
 
     /**
      * Create a new instance of MuteService
@@ -60,12 +61,8 @@ export class MuteService {
                 }
             });
 
-            const muteTimer = this.activeMuteTimers.find((mute) => mute.memberId === memberId);
-            if (muteTimer) {
-                clearTimeout(muteTimer.timerId);
-            }
             const message = `Unmuted user ${memberText}`;
-            this.activeMuteTimers = this.activeMuteTimers.filter((mute) => mute.memberId === memberId);
+            this.activeMutes = this.activeMutes.filter((mute) => mute.memberId === memberId);
             this.logService.logToGuildChannel(message, guildId);
             return message;
         }
@@ -90,7 +87,7 @@ export class MuteService {
         }
 
         this.logService.logToGuildChannel(`Muting user ${memberText} for _${reason}_ for time ${expiration} by ${muter.nickname || muter.user.username}`, mutee.guild);
-        const currentlyMuted = this.activeMuteTimers.find((mute) => mute.memberId === mutee.id);
+        const currentlyMuted = this.activeMutes.find((mute) => mute.memberId === mutee.id);
 
         const chrono = getChronoCustom();
         const parsedDate = chrono.parseDate(expiration);
@@ -103,9 +100,7 @@ export class MuteService {
 
         if (currentlyMuted) {
             this.logService.logToGuildChannel(`${memberText} is currently muted - overriding mute`, mutee.guild);
-            // Clear timeout and remove from active timers
-            clearTimeout(currentlyMuted.timerId);
-            this.activeMuteTimers = this.activeMuteTimers.filter((mute) => mute.memberId === mutee.id);
+            this.activeMutes = this.activeMutes.filter((mute) => mute.memberId === mutee.id);
 
             await Mute.update({
                 active: false,
@@ -148,9 +143,8 @@ export class MuteService {
             if (!hasMutedRole) {
                 await mutee.roles.add(mutedRole.value);
             }
-            const timeoutId = setTimeout(() => this.unmuteUser(mutee.id, mutee.guild.id), timeout);
-            this.activeMuteTimers.push({
-                timerId: timeoutId,
+            this.activeMutes.push({
+                type: 'mute',
                 memberId: mutee.id,
                 clearTime: parsedDate.getTime(),
                 guildId: mutee.guild.id
@@ -176,7 +170,7 @@ export class MuteService {
         const memberText = this.logService.getMemberText(member);
         const mutedRole = await this.getMutedRole(member.guild.id);
         if (mutedRole) {
-            const hasMute = this.activeMuteTimers.filter((mute) => {
+            const hasMute = this.activeMutes.filter((mute) => {
                 return mute.memberId === member.id && mute.guildId === member.guild.id
             });
             if (hasMute.length > 0) {
@@ -191,15 +185,11 @@ export class MuteService {
         for (const mute of mutes) {
             const now = Date.now();
             if (mute.clearTime > now && mute.active) {
-                const muteTimer = setTimeout(
-                    () => this.unmuteUser(mute.userId, mute.serverId),
-                    mute.clearTime - now
-                );
-                this.activeMuteTimers.push({
+                this.activeMutes.push({
                     guildId: mute.serverId,
                     memberId: mute.userId,
                     clearTime: mute.clearTime,
-                    timerId: muteTimer
+                    type: 'mute',
                 });
             }
 
@@ -221,6 +211,22 @@ export class MuteService {
                 }
             }
         }
+    }
+
+    /**
+     * Tick the mutes and add them to the undo queue if they are done
+     */
+    public async tickMutes() {
+        const now = Date.now();
+        const expiredMutes = this.activeMutes.filter((mute) => now > mute.clearTime);
+        const nonExpiredMutes = this.activeMutes.filter((mute) => now < mute.clearTime);
+        expiredMutes.forEach((mute) => {
+            if (now > mute.clearTime) {
+                QueueService.getInstance().addToPunishmentUndoQueue(mute);
+            }
+        });
+
+        this.activeMutes = nonExpiredMutes;
     }
 
     private async getMutedRole(guildId: string) {
