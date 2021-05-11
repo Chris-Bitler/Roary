@@ -165,15 +165,7 @@ export class BanService {
                         `${ban.userName} (${ban.userId})'s ban expired while bot was off, unbanning`,
                         ban.serverId
                     );
-                    guild.members.unban(ban.userId);
-                    Ban.update({
-                        active: false,
-                    }, {
-                        where: {
-                            serverId: ban.serverId,
-                            userId: ban.userId
-                        }
-                    });
+                    this.unbanUser(ban.userId, ban.serverId);
                 }
             }
         });

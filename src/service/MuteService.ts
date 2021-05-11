@@ -205,7 +205,7 @@ export class MuteService {
                         );
                         const member = guild.member(mute.userId);
                         if (member) {
-                            await member.roles.remove(mutedRole.value);
+                            await this.unmuteUser(mute.userId, mute.serverId);
                         }
                     }
                 }
