@@ -53,7 +53,7 @@ export class BanService {
                     serverId: guildId
                 }
             });
-            this.activeBans = this.activeBans.filter((ban) => ban.memberId === memberId);
+            this.activeBans = this.activeBans.filter((ban) => ban.memberId !== memberId);
             const message = `Unbanned user ${memberId}`;
             this.logService.logToGuildChannel(message, guildId);
             return message;

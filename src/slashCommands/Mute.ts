@@ -55,8 +55,8 @@ export class MuteCommand extends ExtendedSlashCommand {
             const user = context.options.user as string;
             const time = context.options.time as string;
             const reason = context.options.reason as string;
-            const sender = guild.members.resolve(context.user.id);
-            const targetUser = guild.members.resolve(user);
+            const sender = await guild.members.fetch(context.user.id);
+            const targetUser = await guild.members.fetch(user);
             if (sender && targetUser) {
                 const message = await MuteService.getInstance().muteUser(targetUser, sender, reason, time);
                 context.send(message, { ephemeral: true })

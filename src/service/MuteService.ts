@@ -116,7 +116,6 @@ export class MuteService {
             );
         }
 
-        const timeout = parsedDate.getTime() - Date.now();
         const expirationDateString = moment
             .tz(parsedDate.getTime(), 'America/New_York')
             .format('MMMM Do YYYY, h:mm:ss a');
