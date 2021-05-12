@@ -62,7 +62,7 @@ export class MuteService {
             });
 
             const message = `Unmuted user ${memberText}`;
-            this.activeMutes = this.activeMutes.filter((mute) => mute.memberId === memberId);
+            this.activeMutes = this.activeMutes.filter((mute) => mute.memberId !== memberId);
             this.logService.logToGuildChannel(message, guildId);
             return message;
         }
