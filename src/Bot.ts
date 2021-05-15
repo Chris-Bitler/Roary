@@ -29,6 +29,8 @@ import {WarnCommand} from "./slashCommands/Warn";
 import {MuteService} from "./service/MuteService";
 import {BanService} from "./service/BanService";
 import {QueueService} from "./service/QueueService";
+import {ActionService} from "./service/ActionService";
+import {ActionsCommand} from "./slashCommands/Actions";
 
 pg.defaults.parseInt8 = true;
 
@@ -56,6 +58,7 @@ const creator = new SlashCreator({
             .registerCommand(new MuteCommand(client, creator))
             .registerCommand(new UnmuteCommand(client, creator))
             .registerCommand(new WarnCommand(client, creator))
+            .registerCommand(new ActionsCommand(client, creator))
             .syncCommands();
     } catch (e) {
         console.error(e);
@@ -94,8 +97,22 @@ client.on('ready', () => {
 
 client.on('guildMemberAdd', (member: GuildMember) => MuteService.getInstance().handleUserRejoin(member));
 client.on('guildBanRemove', (guild: Guild, user: User) => BanService.getInstance().unbanUser(user.id, guild.id));
-
-process.on('uncaughtException', function (err) {
+client.on('messageReactionAdd', async (reaction: MessageReaction, user: User | PartialUser) => {
+    const userToUse = await user.fetch();
+    if (reaction.me)
+        return;
+    const message = await reaction.message.fetch();
+    if (message.embeds.length === 0)
+        return;
+    const success = await ActionService.getInstance().handleEmbedPage(reaction.message, reaction, message.embeds[0]);
+    if (success)
+        await reaction.users.remove(userToUse.id);
 });
+process.on('uncaughtException', function (err) {
+    console.log(err);
+});
+
+creator.on('error', (err) => console.error(err));
+creator.on('debug', (msg) => console.log(msg));
 
 export { client };
