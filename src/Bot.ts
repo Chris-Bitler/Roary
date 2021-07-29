@@ -50,6 +50,16 @@ const client = new Client({
     ],
 });
 
+const commands = [
+    new ActionsCommand(),
+    new BanCommand(),
+    new KickCommand(),
+    new MuteCommand(),
+    new SettingCommand(),
+    new UnmuteCommand(),
+    new WarnCommand()
+]
+
 const sequelize: Sequelize = new Sequelize(process.env.DATABASE_URL as string, {
     dialect: 'postgres',
     logging: false,
@@ -70,15 +80,7 @@ client.login(process.env.BOT_TOKEN);
 client.on('ready', () => {
     BanService.getInstance().loadBans();
     MuteService.getInstance().loadMutes();
-    registerCommands(client, [
-        new ActionsCommand(),
-        new BanCommand(),
-        new KickCommand(),
-        new MuteCommand(),
-        new SettingCommand(),
-        new UnmuteCommand(),
-        new WarnCommand()
-    ]);
+    registerCommands(client, commands);
     setInterval(() => MuteService.getInstance().tickMutes(), 1000);
     setInterval(() => BanService.getInstance().tickBans(), 1000);
     setInterval(() => QueueService.getInstance().tickPunishmentUndoQueue(), 3000);
@@ -99,6 +101,17 @@ client.on('messageReactionAdd', async (reaction: MessageReaction, user: User | P
     if (success)
         await reaction.users.remove(userToUse.id);
 });
+
+client.on('interactionCreate', (interaction) => {
+   if (!interaction.isCommand()) return;
+   const commandName = interaction.commandName;
+   commands.forEach((command) => {
+      if (command.COMMAND_DATA.name.toLowerCase() == commandName.toLowerCase()) {
+          command.run(interaction);
+      }
+   });
+});
+
 process.on('uncaughtException', function (err) {
     console.log(err);
 });
