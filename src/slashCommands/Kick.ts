@@ -1,58 +1,50 @@
-import {ExtendedSlashCommand} from './ExtendedSlashCommand';
-import {Client} from 'discord.js';
-import {CommandContext, CommandOptionType, SlashCreator} from 'slash-create';
+import {CommandInteraction, Permissions, User} from 'discord.js';
+import {Command} from "../types/Command";
 import {KickService} from "../service/KickService";
+import {getCommandOption, OPTION_TYPES} from "../util/CommandUtils";
 
 /**
  * Kick slash command
  */
-export class KickCommand extends ExtendedSlashCommand {
-    client: Client
-
-    /**
-     * Create a new instance of the kick slash command
-     * @param client The discord.js client
-     * @param creator The slash creator instance
-     */
-    constructor(client: Client, creator: SlashCreator) {
-        super(creator, {
-            name: 'rkick',
-            description: 'Kick moderation command',
-            requiredPermissions: ['KICK_MEMBERS'],
-            options: [{
-                type: CommandOptionType.USER,
-                name: 'user',
-                description: 'The user to kick',
-                required: true,
-            }, {
-                type: CommandOptionType.STRING,
-                name: 'reason',
-                description: 'The reason to kick the user for',
-                required: true,
-            }]
-        });
-        this.client = client;
+export class KickCommand implements Command {
+    REQUIRED_PERMISSION = Permissions.FLAGS.KICK_MEMBERS
+    COMMAND_DATA = {
+        name: 'rkick',
+        description: 'Kick moderation command',
+        options: [{
+            type: OPTION_TYPES.USER,
+            name: 'user',
+            description: 'The user to kick',
+            required: true,
+        }, {
+            type: OPTION_TYPES.STRING,
+            name: 'reason',
+            description: 'The reason to kick the user for',
+            required: true,
+        }]
     }
 
     /**
      * Run the command
-     * @param context The command context
+     * @param interaction The command interaction
      */
-    async run(context: CommandContext) {
-        const { guild, channel } = this.getGuildChannel(this.client, context);
-        if (!guild || !channel) {
-            context.send('This command must be used in a text channel in a discord server.', { ephemeral: true });
+    async run(interaction: CommandInteraction) {
+        const guild = interaction?.guild;
+        const channel = interaction?.channel;
+        const senderUser = interaction?.user;
+        if (!guild || !channel || !senderUser) {
+            await interaction.reply({ content: 'This command must be used in a text channel in a discord server.', ephemeral: true })
             return;
         }
-        const hasPermission = this.hasPermission(context);
+        const sender = await guild.members.fetch(senderUser);
+        const hasPermission = sender?.permissions.has(this.REQUIRED_PERMISSION);
         if (hasPermission) {
-            const user = context.options.user as string;
-            const reason = context.options.reason as string;
-            const sender = guild.member(context.user.id);
-            const targetUser = guild.member(user);
+            const user = getCommandOption(interaction.options.get('user')) as User;
+            const reason = getCommandOption(interaction.options.get('reason')) as string;
+            const targetUser = await guild.members.fetch(user);
             if (sender && targetUser) {
                 const message = await KickService.getInstance().kickUser(targetUser, sender, reason);
-                context.send(message, { ephemeral: true })
+                await interaction.reply({ content: message, ephemeral: true });
             }
         }
     }

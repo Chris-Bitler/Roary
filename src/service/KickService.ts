@@ -40,14 +40,16 @@ export class KickService {
         this.logService.logToGuildChannel(`Kicking user ${memberText} for _${reason}_ by ${kicker.nickname || kicker.user.username}`, kickee.guild);
 
         try {
-            await kickee.send(
-                getInformationalEmbed(
+            await kickee.send({
+                embeds: [
+                    getInformationalEmbed(
                     'You have been kicked',
                     `You have been kicked from the \`${kickee.guild.name}\` discord for _${reason.trim()}_ by **${
                         kicker.user.username
                     }**`
-                )
-            );
+                    )
+                ]
+            });
         } catch (e) {
             this.logService.logToGuildChannel(`Cannot message user ${memberText} with kick message`, kickee.guild);
         }

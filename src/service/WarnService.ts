@@ -40,14 +40,16 @@ export class WarnService {
         this.logService.logToGuildChannel(`Warning user ${memberText} for ${reason} by ${warner.nickname || warner.user.username}`, warnee.guild);
 
         try {
-            await warnee.send(
-                getInformationalEmbed(
-                    'You have been warned',
-                    `You have been warned by **${
-                        warner.user.username
-                    }** in the \`${warnee.guild.name}\` discord for _${reason.trim()}_.`
-                )
-            );
+            await warnee.send({
+                embeds: [
+                    getInformationalEmbed(
+                        'You have been warned',
+                        `You have been warned by **${
+                            warner.user.username
+                        }** in the \`${warnee.guild.name}\` discord for _${reason.trim()}_.`
+                    )
+                ]
+            });
         } catch (err) {
             const message = `Cannot message ${memberText} with warn`;
             this.logService.logToGuildChannel(message, warnee.guild.id);

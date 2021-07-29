@@ -1,5 +1,5 @@
 import {LoggingService} from "./LoggingService";
-import {GuildMember} from "discord.js";
+import {GuildMember, Snowflake} from "discord.js";
 import {ActivePunishment} from "../types/Punishment";
 import {Mute} from "../models/Mute";
 import {Setting} from "../models/Setting";
@@ -42,15 +42,15 @@ export class MuteService {
      */
     public async unmuteUser(memberId: string, guildId: string): Promise<string> {
         const mutedRole = await this.getMutedRole(guildId);
-        const guild = client.guilds.resolve(guildId);
-        const member = guild?.member(memberId);
+        const guild = client.guilds.resolve(guildId as Snowflake);
+        const member = guild?.members.resolve(memberId as Snowflake);
 
         if (member) {
             const memberText = this.logService.getMemberText(member);
             this.logService.logToGuildChannel(`Unmuting user ${memberText}.`, guildId);
             if (mutedRole) {
                 this.logService.logToGuildChannel(`Removing muted role for ${memberText}`, guildId);
-                await member.roles.remove(mutedRole?.value);
+                await member.roles.remove(mutedRole?.value as Snowflake);
             }
             await Mute.update({
                 active: false,
@@ -119,14 +119,16 @@ export class MuteService {
         const expirationDateString = moment
             .tz(parsedDate.getTime(), 'America/New_York')
             .format('MMMM Do YYYY, h:mm:ss a');
-        await mutee.send(
-            getInformationalEmbed(
-                'You have been muted',
-                `You have been muted for _${reason}_ until ${expirationDateString} EST by **${
-                    muter.displayName || muter.user.username
-                }**`
-            )
-        );
+        await mutee.send({
+            embeds: [
+                getInformationalEmbed(
+                    'You have been muted',
+                    `You have been muted for _${reason}_ until ${expirationDateString} EST by **${
+                        muter.displayName || muter.user.username
+                    }**`
+                )
+            ]
+        });
         try {
             await Mute.create({
                 active: true,
@@ -140,7 +142,7 @@ export class MuteService {
             });
             const hasMutedRole = mutee.roles.cache.some(role => role.id === mutedRole.value);
             if (!hasMutedRole) {
-                await mutee.roles.add(mutedRole.value);
+                await mutee.roles.add(mutedRole.value as Snowflake);
             }
             this.activeMutes.push({
                 type: 'mute',
@@ -159,7 +161,7 @@ export class MuteService {
                 message,
                 mutee.guild
             );
-            mutee.roles.remove(mutedRole.value);
+            mutee.roles.remove(mutedRole.value as Snowflake);
 
             return message;
         }
@@ -174,7 +176,7 @@ export class MuteService {
             });
             if (hasMute.length > 0) {
                 this.logService.logToGuildChannel(`${memberText} has rejoined with a current mute, re-muting`, member.guild);
-                await member.roles.add(mutedRole.value);
+                await member.roles.add(mutedRole.value as Snowflake);
             }
         }
     }
@@ -196,13 +198,13 @@ export class MuteService {
             // Handle mutes while the bot was down
             if (mutedRole) {
                 if (now > mute.clearTime && mute.active) {
-                    const guild = client.guilds.resolve(mute.serverId);
+                    const guild = client.guilds.resolve(mute.serverId as Snowflake);
                     if (guild) {
                         this.logService.logToGuildChannel(
                             `${mute.userName} (${mute.userId})'s mute expired while bot was off, unbanning`,
                             mute.serverId
                         );
-                        const member = guild.member(mute.userId);
+                        const member = guild.members.resolve(mute.userId as Snowflake);
                         if (member) {
                             await this.unmuteUser(mute.userId, mute.serverId);
                         }

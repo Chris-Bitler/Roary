@@ -1,5 +1,5 @@
 import {LoggingService} from "./LoggingService";
-import {GuildMember} from "discord.js";
+import {GuildMember, Snowflake} from "discord.js";
 import {ActivePunishment} from "../types/Punishment";
 import {client} from "../Bot";
 import {getChronoCustom} from "../util/DateUtil";
@@ -40,11 +40,15 @@ export class BanService {
      * @param {string} guildId The guild id
      */
     public async unbanUser(memberId: string, guildId: string): Promise<string> {
-        const guild = client.guilds.resolve(guildId);
+        const guild = client.guilds.resolve(guildId as Snowflake);
 
         if (guild) {
             this.logService.logToGuildChannel(`Unbanning user ${memberId}.`, guildId);
-            await guild.members.unban(memberId);
+            try {
+                await guild.members.unban(memberId as Snowflake);
+            } catch (err) {
+                // There are cases where bans no longer exist
+            }
             await Ban.update({
                 active: false,
             }, {
@@ -107,14 +111,16 @@ export class BanService {
                 serverId: banee.guild.id,
                 reason,
             });
-            await banee.send(
-                getInformationalEmbed(
+            await banee.send({
+                embeds: [
+                    getInformationalEmbed(
                     'You have been banned',
                     `You have been banned from the \`${banee.guild.name}\` discord for _${reason.trim()}_ by **${
                         banner.user.username
                     }** until ${expirationDateString}`
-                )
-            );
+                    )
+                ]
+        });
             await banee.ban({
                 reason
             });
@@ -159,7 +165,7 @@ export class BanService {
             }
             // Deal with bans that went inactive while the bot was off
             if (now > ban.clearTime && ban.active) {
-                const guild = client.guilds.resolve(ban.serverId);
+                const guild = client.guilds.resolve(ban.serverId as Snowflake);
                 if (guild) {
                     this.logService.logToGuildChannel(
                         `${ban.userName} (${ban.userId})'s ban expired while bot was off, unbanning`,

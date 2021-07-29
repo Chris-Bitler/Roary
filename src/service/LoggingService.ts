@@ -1,4 +1,4 @@
-import {Guild, GuildMember, TextChannel} from "discord.js";
+import {Guild, GuildMember, Snowflake, TextChannel} from "discord.js";
 import {Setting} from "../models/Setting";
 import {client} from "../Bot";
 
@@ -14,10 +14,10 @@ export class LoggingService {
     }
 
     public async logToGuildChannel(message: string, guild: Guild | string) {
-        const guildToUse = typeof guild === 'string' ? client.guilds.resolve(guild) : guild as Guild;
+        const guildToUse = typeof guild === 'string' ? client.guilds.resolve(guild as Snowflake) : guild as Guild;
         if (guildToUse) {
             const logChannelId = (await Setting.getSetting('logChannel', guildToUse.id))?.value;
-            const logChannel = logChannelId ? guildToUse.channels.resolve(logChannelId) : null;
+            const logChannel = logChannelId ? guildToUse.channels.resolve(logChannelId as Snowflake) : null;
             if (logChannel instanceof TextChannel) {
                 await logChannel.send(message);
             } else {

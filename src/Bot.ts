@@ -2,18 +2,14 @@
 import * as pg from 'pg';
 import * as dotenv from 'dotenv';
 import {
-    Client, Guild,
+    Client,
+    GuildBan,
     GuildMember,
     Intents,
-    Message,
     MessageReaction,
-    PartialMessage,
     PartialUser,
-    TextChannel,
     User,
-    WSEventType
 } from 'discord.js';
-import {GatewayServer, SlashCreator} from "slash-create";
 import { Sequelize } from "sequelize-typescript";
 import {Ban} from "./models/Ban";
 import {Kick} from "./models/Kick";
@@ -31,6 +27,7 @@ import {BanService} from "./service/BanService";
 import {QueueService} from "./service/QueueService";
 import {ActionService} from "./service/ActionService";
 import {ActionsCommand} from "./slashCommands/Actions";
+import {registerCommands} from "./slashCommands/CommandManager";
 
 pg.defaults.parseInt8 = true;
 
@@ -38,38 +35,20 @@ dotenv.config();
 
 const client = new Client({
     partials: ['MESSAGE', 'CHANNEL', 'REACTION'],
-    ws: {
-        intents: Intents.ALL
-    }
+    intents: [
+        Intents.FLAGS.DIRECT_MESSAGE_REACTIONS,
+        Intents.FLAGS.DIRECT_MESSAGES,
+        Intents.FLAGS.GUILDS,
+        Intents.FLAGS.GUILD_BANS,
+        Intents.FLAGS.GUILD_EMOJIS,
+        Intents.FLAGS.GUILD_INVITES,
+        Intents.FLAGS.GUILD_MEMBERS,
+        Intents.FLAGS.GUILD_MESSAGE_REACTIONS,
+        Intents.FLAGS.GUILD_MESSAGES,
+        Intents.FLAGS.GUILD_PRESENCES,
+        Intents.FLAGS.GUILD_VOICE_STATES
+    ],
 });
-
-const creator = new SlashCreator({
-    applicationID: process.env.BOT_APP_ID ?? '',
-    publicKey: process.env.BOT_PUBLIC_KEY ?? '',
-    token: process.env.BOT_TOKEN ?? ''
-});
-
-(async () => {
-    try {
-        await creator
-            .registerCommand(new SettingCommand(client, creator))
-            .registerCommand(new KickCommand(client, creator))
-            .registerCommand(new BanCommand(client, creator))
-            .registerCommand(new MuteCommand(client, creator))
-            .registerCommand(new UnmuteCommand(client, creator))
-            .registerCommand(new WarnCommand(client, creator))
-            .registerCommand(new ActionsCommand(client, creator))
-            .syncCommands();
-    } catch (e) {
-        console.error(e);
-    }
-})();
-
-creator.withServer(
-    new GatewayServer((handler) =>
-        client.ws.on(<WSEventType>'INTERACTION_CREATE', handler)
-    )
-);
 
 const sequelize: Sequelize = new Sequelize(process.env.DATABASE_URL as string, {
     dialect: 'postgres',
@@ -83,6 +62,7 @@ const sequelize: Sequelize = new Sequelize(process.env.DATABASE_URL as string, {
         }
     }
 });
+
 sequelize.sync();
 
 client.login(process.env.BOT_TOKEN);
@@ -90,13 +70,24 @@ client.login(process.env.BOT_TOKEN);
 client.on('ready', () => {
     BanService.getInstance().loadBans();
     MuteService.getInstance().loadMutes();
+    registerCommands(client, [
+        new ActionsCommand(),
+        new BanCommand(),
+        new KickCommand(),
+        new MuteCommand(),
+        new SettingCommand(),
+        new UnmuteCommand(),
+        new WarnCommand()
+    ]);
     setInterval(() => MuteService.getInstance().tickMutes(), 1000);
     setInterval(() => BanService.getInstance().tickBans(), 1000);
     setInterval(() => QueueService.getInstance().tickPunishmentUndoQueue(), 3000);
 });
 
 client.on('guildMemberAdd', (member: GuildMember) => MuteService.getInstance().handleUserRejoin(member));
-client.on('guildBanRemove', (guild: Guild, user: User) => BanService.getInstance().unbanUser(user.id, guild.id));
+client.on('guildBanRemove', async (ban: GuildBan) => {
+    await BanService.getInstance().unbanUser(ban.user.id, ban.guild.id)
+});
 client.on('messageReactionAdd', async (reaction: MessageReaction, user: User | PartialUser) => {
     const userToUse = await user.fetch();
     if (reaction.me)
@@ -104,15 +95,12 @@ client.on('messageReactionAdd', async (reaction: MessageReaction, user: User | P
     const message = await reaction.message.fetch();
     if (message.embeds.length === 0)
         return;
-    const success = await ActionService.getInstance().handleEmbedPage(reaction.message, reaction, message.embeds[0]);
+    const success = await ActionService.getInstance().handleEmbedPage(message, reaction, message.embeds[0]);
     if (success)
         await reaction.users.remove(userToUse.id);
 });
 process.on('uncaughtException', function (err) {
     console.log(err);
 });
-
-creator.on('error', (err) => console.error(err));
-creator.on('debug', (msg) => console.log(msg));
 
 export { client };

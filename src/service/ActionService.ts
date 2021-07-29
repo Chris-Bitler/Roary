@@ -2,8 +2,9 @@ import {Kick} from "../models/Kick";
 import {Ban} from "../models/Ban";
 import {Warn} from "../models/Warn";
 import {Mute} from "../models/Mute";
-import {Guild, Message, MessageEmbed, MessageReaction} from "discord.js";;
+import {Guild, Message, MessageEmbed, MessageReaction, Snowflake, SnowflakeUtil, User} from "discord.js";;
 import moment from "moment-timezone";
+import {client} from "../Bot";
 
 export class ActionService {
     static instance: ActionService;
@@ -17,7 +18,7 @@ export class ActionService {
         return this.instance;
     }
 
-    async fetchActionsForUser(user: string, type: string, start = 0): Promise<(Mute | Ban | Warn | Kick)[] | null> {
+    async fetchActionsForUser(user: User | string, type: string, start = 0): Promise<(Mute | Ban | Warn | Kick)[] | null> {
         let model = null;
         switch (type) {
             case 'mute':
@@ -40,20 +41,23 @@ export class ActionService {
             return null;
         }
 
+        const userId = user instanceof User ? user.id : user;
+
         return model.findAll({
             where: {
-                userId: user
+                userId
             },
             offset: start,
             limit: 5
         });
     };
 
-    async getEmbed(user: string, type: string, page: number, guild: Guild, actions: (Mute | Ban | Kick | Warn)[]): Promise<MessageEmbed | string> {
+    async getEmbed(user: User | string, type: string, page: number, guild: Guild, actions: (Mute | Ban | Kick | Warn)[]): Promise<MessageEmbed | string> {
         if (actions.length === 0) {
             return 'No actions found against user';
         }
-        const userObj = await guild.members.fetch(user);
+        const userId = user instanceof User ? user.id : user as Snowflake;
+        const userObj = await guild.members.fetch(userId);
         if (userObj) {
             const embed = new MessageEmbed();
             actions.forEach((action) => {
@@ -120,7 +124,7 @@ export class ActionService {
         if (actions) {
             const newEmbed = await this.getEmbed(user, type, newPage, reaction.message.guild, actions);
             if (typeof newEmbed !== 'string') {
-                await message.edit(newEmbed);
+                await message.edit({ embeds: [newEmbed] })
             }
 
             return true;
