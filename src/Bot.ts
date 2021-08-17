@@ -5,8 +5,8 @@ import {
     Client,
     GuildBan,
     GuildMember,
-    Intents,
-    MessageReaction,
+    Intents, Message,
+    MessageReaction, PartialMessage,
     PartialUser,
     User,
 } from 'discord.js';
@@ -28,6 +28,7 @@ import {QueueService} from "./service/QueueService";
 import {ActionService} from "./service/ActionService";
 import {ActionsCommand} from "./slashCommands/Actions";
 import {registerCommands} from "./slashCommands/CommandManager";
+import {ModerationService} from "./service/ModerationService";
 
 pg.defaults.parseInt8 = true;
 
@@ -73,6 +74,8 @@ const sequelize: Sequelize = new Sequelize(process.env.DATABASE_URL as string, {
     }
 });
 
+const moderationService = new ModerationService();
+
 sequelize.sync();
 
 client.login(process.env.BOT_TOKEN);
@@ -110,6 +113,15 @@ client.on('interactionCreate', (interaction) => {
           command.run(interaction);
       }
    });
+});
+
+client.on('messageDelete', async (message: Message | PartialMessage) => {
+    await moderationService.handleMessageDelete(message);
+});
+client.on('messageUpdate', async (oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage) => {
+    if (oldMessage.author && oldMessage.author.bot)
+        return;
+    await moderationService.handleMessageEdit(oldMessage, newMessage);
 });
 
 process.on('uncaughtException', function (err) {
