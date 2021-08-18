@@ -37,7 +37,11 @@ export class ModerationService {
         const channel = message.channel;
         const showDeletor = deletor && deletor !== author;
         embed.setAuthor(authorString, author?.avatarURL() || '');
-        embed.addField('Message deleted:', `Message ${message.id} deleted from <#${channel.id}> ${showDeletor ? `by ${deletor?.username}#${deletor?.discriminator}` : ''}`, true);
+        embed.addField(
+            'Message deleted:',
+            `Message ${message.id} deleted from <#${channel.id}> ${showDeletor ? `by \`${deletor?.username}#${deletor?.discriminator}\`` : ''}`,
+            true
+        );
         if(message.content) {
             embed.addField('*Content:*', message.content);
         }
