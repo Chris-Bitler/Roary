@@ -116,7 +116,7 @@ client.on('interactionCreate', (interaction) => {
 });
 
 client.on('messageDelete', async (message: Message | PartialMessage) => {
-    await moderationService.handleMessageDelete(message);
+    setTimeout(async () => await moderationService.handleMessageDelete(message), 500);
 });
 client.on('messageUpdate', async (oldMessage: Message | PartialMessage, newMessage: Message | PartialMessage) => {
     if (oldMessage.author && oldMessage.author.bot)

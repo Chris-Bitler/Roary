@@ -1,21 +1,43 @@
-import {Guild, Message, MessageAttachment, MessageEmbed, PartialMessage, Snowflake, TextChannel} from "discord.js";
+import {
+    ClientUser,
+    Guild,
+    Message,
+    MessageAttachment,
+    MessageEmbed,
+    PartialMessage,
+    Snowflake,
+    TextChannel
+} from "discord.js";
 import {Setting} from "../models/Setting";
 
 export class ModerationService {
-    async getDeletedMessageAuthor(guild: Guild) {
-        const auditLog = await guild.fetchAuditLogs({type: 72});
+    async getDeletedMessageDeletor(message: Message | PartialMessage) {
+        if (!message.guild)
+            return null;
+        const auditLog = await message.guild.fetchAuditLogs({type: 72, limit: 1});
         const first = auditLog.entries.first();
-        return first?.executor || null;
+        if (first?.targetType === 'MESSAGE') {
+            const target = first.target as ClientUser;
+            console.log(target.id);
+            // @ts-ignore
+            if (target.id === message.author?.id && first?.extra?.channel.id === message.channel.id) {
+                return first.executor || null;
+            }
+        }
+
+        return null;
     }
     async handleMessageDelete(message: Message | PartialMessage) {
         if (!message.guild)
             return;
         const embed = new MessageEmbed();
-        const author = await this.getDeletedMessageAuthor(message.guild);
+        const deletor = await this.getDeletedMessageDeletor(message);
+        const author = message.author;
         const authorString = author ? `${author.username}#${author.discriminator}` : 'Unknown';
         const channel = message.channel;
+        const showDeletor = deletor && deletor !== author;
         embed.setAuthor(authorString, author?.avatarURL() || '');
-        embed.addField('Message deleted:', `Message ${message.id} deleted from <#${channel.id}>`, true);
+        embed.addField('Message deleted:', `Message ${message.id} deleted from <#${channel.id}> ${showDeletor ? `by ${deletor?.username}#${deletor?.discriminator}` : ''}`, true);
         if(message.content) {
             embed.addField('*Content:*', message.content);
         }
