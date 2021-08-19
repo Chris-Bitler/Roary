@@ -201,7 +201,7 @@ export class MuteService {
                     const guild = client.guilds.resolve(mute.serverId as Snowflake);
                     if (guild) {
                         this.logService.logToGuildChannel(
-                            `${mute.userName} (${mute.userId})'s mute expired while bot was off, unbanning`,
+                            `${mute.userName} (${mute.userId})'s mute expired while bot was off, unmuting`,
                             mute.serverId
                         );
                         const member = guild.members.resolve(mute.userId as Snowflake);
