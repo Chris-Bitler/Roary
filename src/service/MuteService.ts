@@ -207,6 +207,16 @@ export class MuteService {
                         const member = guild.members.resolve(mute.userId as Snowflake);
                         if (member) {
                             await this.unmuteUser(mute.userId, mute.serverId);
+                        } else {
+                            // Member doesn't exist, just update mute to not be active
+                            await Mute.update({
+                                active: false,
+                            }, {
+                                where: {
+                                    userId: mute.userId,
+                                    serverId: mute.serverId
+                                }
+                            });
                         }
                     }
                 }
