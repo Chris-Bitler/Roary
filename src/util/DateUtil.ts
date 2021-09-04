@@ -18,3 +18,13 @@ export const getChronoCustom = () => {
 
     return custom;
 };
+
+export const parseDateTimeInput = (str: string) => {
+    const chrono = getChronoCustom();
+    let parsedDate = chrono.parseDate(str);
+    if (!parsedDate) {
+        parsedDate = chrono.parseDate(`${str} from now`);
+    }
+
+    return parsedDate;
+}

@@ -20,11 +20,16 @@ export class BanCommand implements Command {
             name: 'time',
             description: 'The amount of time to ban a user for',
             required: true,
-        },{
+        }, {
             type: OPTION_TYPES.STRING,
             name: 'reason',
             description: 'The reason to ban the user for',
             required: true,
+        }, {
+            type: OPTION_TYPES.BOOLEAN,
+            name: 'public',
+            description: 'Show the message instead of just to yourself',
+            required: false
         }]
     };
     REQUIRED_PERMISSION = Permissions.FLAGS.BAN_MEMBERS;
@@ -45,11 +50,16 @@ export class BanCommand implements Command {
             const user = getCommandOption(interaction.options.get('user')) as User;
             const time = getCommandOption(interaction.options.get('time')) as string;
             const reason = getCommandOption(interaction.options.get('reason')) as string;
+            const publicOption = interaction.options.get('public');
+            let isPublic = false;
+            if (isPublic) {
+                isPublic = getCommandOption(publicOption) as boolean;
+            }
             const sender = await guild.members.fetch(interaction.user.id);
             const targetUser = await guild.members.fetch(user);
             if (sender && targetUser) {
                 const message = await BanService.getInstance().banUser(targetUser, sender, reason, time);
-                await interaction.reply({ content: message, ephemeral: true});
+                await interaction.reply({ content: message, ephemeral: isPublic});
             }
         }
     }

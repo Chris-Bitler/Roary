@@ -21,6 +21,11 @@ export class WarnCommand implements Command {
             name: 'reason',
             description: 'The reason to warn the user for',
             required: true,
+        }, {
+            type: OPTION_TYPES.BOOLEAN,
+            name: 'public',
+            description: 'Show the message instead of just to yourself',
+            required: false
         }]
     }
 
@@ -42,9 +47,14 @@ export class WarnCommand implements Command {
             const user = getCommandOption(interaction.options.get('user')) as User;
             const reason = getCommandOption(interaction.options.get('reason')) as string;
             const targetUser = await guild.members.fetch(user);
+            const publicOption = interaction.options.get('public');
+            let isPublic = false;
+            if (isPublic) {
+                isPublic = getCommandOption(publicOption) as boolean;
+            }
             if (sender && targetUser) {
                 const message = await WarnService.getInstance().warnUser(targetUser, sender, reason);
-                await interaction.reply({ content: message, ephemeral: true });
+                await interaction.reply({ content: message, ephemeral: isPublic });
             }
         }
     }

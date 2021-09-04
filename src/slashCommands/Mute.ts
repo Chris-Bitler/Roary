@@ -26,6 +26,11 @@ export class MuteCommand implements Command {
             name: 'reason',
             description: 'The reason to mute the user for',
             required: true,
+        }, {
+            type: OPTION_TYPES.BOOLEAN,
+            name: 'public',
+            description: 'Show the message instead of just to yourself',
+            required: false
         }]
     }
 
@@ -47,10 +52,15 @@ export class MuteCommand implements Command {
             const user = getCommandOption(interaction.options.get('user')) as User;
             const time = getCommandOption(interaction.options.get('time')) as string;
             const reason = getCommandOption(interaction.options.get('reason')) as string;
+            const publicOption = interaction.options.get('public');
+            let isPublic = false;
+            if (isPublic) {
+                isPublic = getCommandOption(publicOption) as boolean;
+            }
             const targetUser = await guild.members.fetch(user);
             if (sender && targetUser) {
                 const message = await MuteService.getInstance().muteUser(targetUser, sender, reason, time);
-                await interaction.reply({ content: message, ephemeral: true });
+                await interaction.reply({ content: message, ephemeral: isPublic });
             }
         }
     }

@@ -4,7 +4,7 @@ import {ActivePunishment} from "../types/Punishment";
 import {Mute} from "../models/Mute";
 import {Setting} from "../models/Setting";
 import {client} from "../Bot";
-import {getChronoCustom} from "../util/DateUtil";
+import {parseDateTimeInput} from "../util/DateUtil";
 import moment from "moment-timezone";
 import {getInformationalEmbed} from "../util/EmbedUtil";
 import {QueueService} from "./QueueService";
@@ -89,8 +89,7 @@ export class MuteService {
         this.logService.logToGuildChannel(`Muting user ${memberText} for _${reason}_ for time ${expiration} by ${muter.nickname || muter.user.username}`, mutee.guild);
         const currentlyMuted = this.activeMutes.find((mute) => mute.memberId === mutee.id);
 
-        const chrono = getChronoCustom();
-        const parsedDate = chrono.parseDate(expiration);
+        const parsedDate = parseDateTimeInput(expiration);
 
         if (!parsedDate) {
             const message = `Cannot parse passed in date, cannot mute ${memberText}`;

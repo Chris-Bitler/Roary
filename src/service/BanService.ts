@@ -2,7 +2,7 @@ import {LoggingService} from "./LoggingService";
 import {GuildMember, Snowflake} from "discord.js";
 import {ActivePunishment} from "../types/Punishment";
 import {client} from "../Bot";
-import {getChronoCustom} from "../util/DateUtil";
+import {parseDateTimeInput} from "../util/DateUtil";
 import {Ban} from "../models/Ban";
 import {getInformationalEmbed} from "../util/EmbedUtil";
 import moment from "moment-timezone";
@@ -78,8 +78,7 @@ export class BanService {
 
         this.logService.logToGuildChannel(`Banning user ${memberText} for _${reason}_ for time ${expiration} by ${banner.nickname || banner.user.username}`, banee.guild);
 
-        const chrono = getChronoCustom();
-        const parsedDate = chrono.parseDate(expiration);
+        const parsedDate = parseDateTimeInput(expiration);
 
         if (!parsedDate) {
             const message = `Cannot parse passed in date, cannot ban ${memberText}`;
