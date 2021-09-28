@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "license": "MIT",
   "dependencies": {
-    "chrono-node": "^2.2.6",
+    "chrono-node": "^2.3.2",
     "discord-api-types": "^0.18.1",
     "discord.js": "dev",
     "dotenv": "^9.0.0",
