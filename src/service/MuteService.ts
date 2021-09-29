@@ -149,7 +149,7 @@ export class MuteService {
                 clearTime: parsedDate.getTime(),
                 guildId: mutee.guild.id
             });
-            const message = `User ${memberText} muted until ${expirationDateString}`;
+            const message = `User ${memberText} muted until ${expirationDateString} (${parsedDate.getTime()}) (User input: ${expiration})`;
             this.logService.logToGuildChannel(message, mutee.guild);
 
             return message;
