@@ -95,8 +95,8 @@ export class BanService {
             }
         });
 
-        const expirationDateString = moment
-            .tz(parsedDate.getTime(), 'America/New_York')
+        const expirationDateString = moment(parsedDate.getTime())
+            .tz('America/New_York')
             .format('MMMM Do YYYY, h:mm:ss a');
 
         try {
